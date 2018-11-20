@@ -1,0 +1,89 @@
+<html>
+	<head>
+		<title>Calc</title>
+	</head>
+	<body>
+		Current Calculator Value: <var id='val'></var>
+		<br><br>
+		<input type='text' id='num' placeholder='number' value=''/>
+		<br><br>
+		<input type='button' id='add' value='add'></input>
+		<input type='button' id='subtract' value='subtract'></input>
+		<input type='button' id='pop' value='pop'></input>
+		<br><br>
+		<input type='button' id='reset' value='reset' />
+		<br><br><br>
+		Past Opperations:
+		<p id='pastOps'></p>
+	</body>
+	<script>
+		//Disable Buttons Add and Subtract
+		document.getElementById("add").disabled = true;
+		document.getElementById("subtract").disabled = true;
+		
+		//Event Listeners
+		document.getElementById("num").addEventListener("input", function(){ console.log(document.getElementById("num").value); enableButtons(); });
+		document.getElementById("add").addEventListener("click", function(){ myFetch("/add"); });
+		document.getElementById("subtract").addEventListener("click", function(){ myFetch("/subtract"); });
+		document.getElementById("pop").addEventListener("click", function(){ myFetch("/pop"); });
+		document.getElementById("reset").addEventListener("click", function(){ resetFetch("/reset"); });
+		
+		var url = "http://localhost:8008";
+		
+		document.getElementById('val').innerHTML = calc;
+		
+		function myFetch(action) {
+			var urlToFetch = "http://localhost:8008" + action;
+			console.log(urlToFetch);
+			let postData = "number=" + document.getElementById("num").value;
+			fetch(urlToFetch, {
+				method: 'POST',
+				mode: 'cors',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded'
+				},
+				body: postData
+			}).then(res => {
+				if(res.ok) {
+					return res.json();
+				} else {
+					throw Error('Request rejected with status ' + response.status);
+				}
+			}).then(data => {
+				if(data.hasOwnProperty('value')){
+					document.getElementById('val').innerHTML = data.value;
+				}
+				document.getElementById('pastOps').innerHTML = "";
+				if(data.hasOwnProperty('stack')) {
+					data['stack'].forEach(function(element){
+						document.getElementById('pastOps').innerHTML += (JSON.stringify(element) + '<br/>');
+					});
+				}
+			}).catch((error) => console.log(error) );
+			document.getElementById('num').value = "";
+		}
+		
+		function resetFetch(action) {
+			var urlToFetch = "http://localhost:8008" + action;
+			fetch(urlToFetch)
+				.then((res) => {
+					return res.json()
+				}).then((data) => {
+					document.getElementById('val').innerHTML = data.value;
+					document.getElementById('pastOps').innerHTML = data.stack;
+				})
+		}
+		
+		function enableButtons() {
+			if(document.getElementById("num").value != '' && !(isNaN(document.getElementById("num").value))) {
+				document.getElementById("add").disabled = false;
+				document.getElementById("subtract").disabled = false;
+			}
+			else {
+				document.getElementById("add").disabled = true;
+				document.getElementById("subtract").disabled = true;
+				console.log("Not a number.");
+			}
+		}
+	</script>
+</html>
